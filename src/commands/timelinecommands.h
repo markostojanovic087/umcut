@@ -701,6 +701,22 @@ private:
     QUuid m_uuid;
 };
 
+class CopyPasteTrackCommand : public QUndoCommand
+{
+public:
+    CopyPasteTrackCommand(TimelineDock &timeline,
+                        int sourceTrackIndex,
+                        int destinationTrackIndex);
+    
+    void redo();
+    void undo();
+
+private:
+    TimelineDock &m_timeline;
+    int m_sourceTrackIndex;
+    int m_destinationTrackIndex;
+};
+
 class RemoveTrackCommand : public QUndoCommand
 {
 public:
@@ -716,6 +732,26 @@ private:
     UndoHelper m_undoHelper;
     QScopedPointer<Mlt::Producer> m_filtersProducer;
     QUuid m_uuid;
+};
+
+class CreateShortTracksCommand : public QUndoCommand
+{
+public:
+    CreateShortTracksCommand(TimelineDock &timeline,
+                            int trackIndex,
+                            TrackType trackType = PlaylistTrackType,
+                            QUndoCommand *parent = 0);
+    ~CreateShortTracksCommand();
+    
+    void redo();
+    void undo();
+
+private:
+    static const int s_shortTracksNumber;
+
+    QList<CopyPasteTrackCommand*> m_copyPasteTrackCommands;
+    QList<InsertTrackCommand*> m_insertTrackCommands;
+    QList<NameTrackCommand*> m_nameTrackCommands;
 };
 
 class MoveTrackCommand : public QUndoCommand

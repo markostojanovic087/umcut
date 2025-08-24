@@ -47,12 +47,14 @@
 #include "widgets/noisewidget.h"
 #include "widgets/textproducerwidget.h"
 #include "widgets/toneproducerwidget.h"
+#include "widgets/ummenulabel.h"
 
 #include <QAction>
 #include <QActionGroup>
 #include <QClipboard>
 #include <QDialogButtonBox>
 #include <QGuiApplication>
+#include <QLabel>
 #include <QMenu>
 #include <QProgressBar>
 #include <QQmlContext>
@@ -97,6 +99,7 @@ TimelineDock::TimelineDock(QWidget *parent)
     trackOperationsMenu->addAction(Actions["timelineAddVideoTrackAction"]);
     trackOperationsMenu->addAction(Actions["timelineInsertTrackAction"]);
     trackOperationsMenu->addAction(Actions["timelineRemoveTrackAction"]);
+    trackOperationsMenu->addAction(Actions["timelineCreateShortTracksAction"]);
     trackOperationsMenu->addAction(Actions["timelineMoveTrackUpAction"]);
     trackOperationsMenu->addAction(Actions["timelineMoveTrackDownAction"]);
     trackOperationsMenu->addAction(Actions["timelineToggleTrackHiddenAction"]);
@@ -411,6 +414,18 @@ void TimelineDock::setupActions()
         removeTrack();
     });
     Actions.add("timelineRemoveTrackAction", action);
+
+    QWidgetAction *widgetAction = new QWidgetAction(this);
+    UMMenuLabel *text = new UMMenuLabel(QString(tr("Create Short Tracks")), this);
+    widgetAction->setDefaultWidget(text);
+    connect(widgetAction, &QAction::triggered, this, [&]() {
+        if (!isMultitrackValid())
+            return;
+        show();
+        raise();
+        createShortTracks();
+    });
+    Actions.add("timelineCreateShortTracksAction", widgetAction);
 
     action = new QAction(tr("Move Track Up"), this);
     action->setShortcut(QKeySequence(Qt::SHIFT | Qt::ALT | Qt::Key_Up));
@@ -2078,6 +2093,19 @@ void TimelineDock::removeTrack()
         if (trackIndex >= m_model.trackList().count())
             setCurrentTrack(m_model.trackList().count() - 1);
     }
+}
+
+void TimelineDock::createShortTracks()
+{
+    if (m_model.trackList().size() == 0)
+        return;
+    if (m_selection.selectedTrack == -1)
+        return;
+    int selectedTrackType = m_model.trackList().at(m_selection.selectedTrack).type;
+    if (selectedTrackType != VideoTrackType)
+        return;
+
+    MAIN.undoStack()->push(new Timeline::CreateShortTracksCommand(*this, m_selection.selectedTrack));
 }
 
 void TimelineDock::moveTrack(int fromTrackIndex, int toTrackIndex)

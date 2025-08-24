@@ -1738,6 +1738,30 @@ void InsertTrackCommand::undo()
     m_model.removeTrack(m_trackIndex);
 }
 
+CopyPasteTrackCommand::CopyPasteTrackCommand(TimelineDock &timeline,
+                                        int sourceTrackIndex,
+                                        int destinationTrackIndex)
+    : m_timeline(timeline)
+    , m_sourceTrackIndex(sourceTrackIndex)
+    , m_destinationTrackIndex(destinationTrackIndex)
+{
+    setText(QObject::tr("Copy paste track"));
+}
+
+void CopyPasteTrackCommand::redo()
+{
+    LOG_DEBUG() << "copy from source trackIndex" << m_sourceTrackIndex << " to destination trackIndex" << m_destinationTrackIndex;
+    // TODO(Marko): do it for all clips
+    m_timeline.setSelection(QList<QPoint>() << QPoint(0, m_sourceTrackIndex));
+    m_timeline.copy(m_sourceTrackIndex, 0);
+    m_timeline.insert(m_destinationTrackIndex, 0);
+}
+
+void CopyPasteTrackCommand::undo()
+{
+    MAIN.undoStack()->undo();
+}
+
 RemoveTrackCommand::RemoveTrackCommand(MultitrackModel &model, int trackIndex, QUndoCommand *parent)
     : QUndoCommand(parent)
     , m_model(model)
@@ -1805,6 +1829,80 @@ void RemoveTrackCommand::undo()
         emit m_model.dataChanged(modelIndex,
                                  modelIndex,
                                  QVector<int>() << MultitrackModel::IsFilteredRole);
+    }
+}
+
+const int CreateShortTracksCommand::s_shortTracksNumber = 2;
+
+CreateShortTracksCommand::CreateShortTracksCommand(TimelineDock &timeline,
+                                                int trackIndex,
+                                                TrackType trackType,
+                                                QUndoCommand *parent)
+    : m_copyPasteTrackCommands()
+    , m_insertTrackCommands()
+    , m_nameTrackCommands()
+{
+    for (int i = 0; i < CreateShortTracksCommand::s_shortTracksNumber; i++) {
+        m_copyPasteTrackCommands.append(
+            new CopyPasteTrackCommand(
+                timeline,
+                trackIndex + CreateShortTracksCommand::s_shortTracksNumber,
+                trackIndex + i 
+            )
+        );
+
+        m_insertTrackCommands.append(
+            new InsertTrackCommand(
+                *timeline.model(),
+                trackIndex + i,
+                trackType,
+                parent
+            )
+        );
+
+        m_nameTrackCommands.append(
+            new NameTrackCommand(
+                *timeline.model(),
+                trackIndex + i,
+                QObject::tr("Short Track %1").arg(i + 1),
+                parent
+            )
+        );
+    }
+
+    setText(QObject::tr("Create short tracks"));
+}
+
+CreateShortTracksCommand::~CreateShortTracksCommand()
+{
+    qDeleteAll(m_copyPasteTrackCommands);
+    m_copyPasteTrackCommands.clear();
+
+    qDeleteAll(m_insertTrackCommands);
+    m_insertTrackCommands.clear();
+
+    qDeleteAll(m_nameTrackCommands);
+    m_nameTrackCommands.clear();
+}
+
+void CreateShortTracksCommand::redo()
+{
+   for (int i = 0; i < CreateShortTracksCommand::s_shortTracksNumber; i++) {
+        m_insertTrackCommands[i]->redo();
+        m_nameTrackCommands[i]->redo();
+   }
+
+   for (int i = 0; i < CreateShortTracksCommand::s_shortTracksNumber; i++) {
+        m_copyPasteTrackCommands[i]->redo();
+   }
+
+   // TODO(Marko): action + undo + redo does not work
+}
+
+void CreateShortTracksCommand::undo()
+{
+    for (int i = CreateShortTracksCommand::s_shortTracksNumber - 1; i >= 0; i--) {
+        m_insertTrackCommands[i]->undo();
     }
 }
 
