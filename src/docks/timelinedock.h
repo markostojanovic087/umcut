@@ -175,6 +175,7 @@ public slots:
     void insertAudioTrack();
     void insertVideoTrack();
     void removeTrack();
+    void createShortTracks();
     void moveTrack(int fromTrackIndex, int toTrackIndex);
     void moveTrackUp();
     void moveTrackDown();
