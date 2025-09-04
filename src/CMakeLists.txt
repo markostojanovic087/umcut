@@ -210,6 +210,8 @@ add_executable(shotcut WIN32 MACOSX_BUNDLE
   widgets/trackpropertieswidget.cpp widgets/trackpropertieswidget.h
   widgets/trackpropertieswidget.ui
   widgets/video4linuxwidget.cpp widgets/video4linuxwidget.h
+  widgets/ummenulabel.cpp widgets/ummenulabel.h
+  widgets/ummenulabelstyle.cpp widgets/ummenulabelstyle.h
   widgets/video4linuxwidget.ui
   ../icons/resources.qrc
 )

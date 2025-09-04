@@ -21,6 +21,7 @@
 #include "abstractproducerwidget.h"
 #include "actions.h"
 #include "commands/timelinecommands.h"
+#include "controllers/filtercontroller.h"
 #include "dialogs/alignaudiodialog.h"
 #include "dialogs/durationdialog.h"
 #include "dialogs/editmarkerdialog.h"
@@ -47,12 +48,14 @@
 #include "widgets/noisewidget.h"
 #include "widgets/textproducerwidget.h"
 #include "widgets/toneproducerwidget.h"
+#include "widgets/ummenulabel.h"
 
 #include <QAction>
 #include <QActionGroup>
 #include <QClipboard>
 #include <QDialogButtonBox>
 #include <QGuiApplication>
+#include <QLabel>
 #include <QMenu>
 #include <QProgressBar>
 #include <QQmlContext>
@@ -97,6 +100,7 @@ TimelineDock::TimelineDock(QWidget *parent)
     trackOperationsMenu->addAction(Actions["timelineAddVideoTrackAction"]);
     trackOperationsMenu->addAction(Actions["timelineInsertTrackAction"]);
     trackOperationsMenu->addAction(Actions["timelineRemoveTrackAction"]);
+    trackOperationsMenu->addAction(Actions["timelineCreateShortTracksAction"]);
     trackOperationsMenu->addAction(Actions["timelineMoveTrackUpAction"]);
     trackOperationsMenu->addAction(Actions["timelineMoveTrackDownAction"]);
     trackOperationsMenu->addAction(Actions["timelineToggleTrackHiddenAction"]);
@@ -411,6 +415,18 @@ void TimelineDock::setupActions()
         removeTrack();
     });
     Actions.add("timelineRemoveTrackAction", action);
+
+    QWidgetAction *widgetAction = new QWidgetAction(this);
+    UMMenuLabel *text = new UMMenuLabel(QString(tr("Create Short Tracks")), this);
+    widgetAction->setDefaultWidget(text);
+    connect(widgetAction, &QAction::triggered, this, [&]() {
+        if (!isMultitrackValid())
+            return;
+        show();
+        raise();
+        createShortTracks();
+    });
+    Actions.add("timelineCreateShortTracksAction", widgetAction);
 
     action = new QAction(tr("Move Track Up"), this);
     action->setShortcut(QKeySequence(Qt::SHIFT | Qt::ALT | Qt::Key_Up));
@@ -2078,6 +2094,72 @@ void TimelineDock::removeTrack()
         if (trackIndex >= m_model.trackList().count())
             setCurrentTrack(m_model.trackList().count() - 1);
     }
+}
+
+void TimelineDock::createShortTracks()
+{
+    if (m_model.trackList().size() == 0)
+        return;
+    if (m_selection.selectedTrack == -1)
+        return;
+    int selectedTrackType = m_model.trackList().at(m_selection.selectedTrack).type;
+    if (selectedTrackType != VideoTrackType)
+        return;
+
+    int i = m_model.trackList().at(currentTrack()).mlt_index;
+    QScopedPointer<Mlt::Producer> track(m_model.tractor()->track(i));
+    if (!track)
+        return;
+
+    Mlt::Playlist playlist(*track);
+
+    LOG_DEBUG() << "Create short tracks from track" << currentTrack() << "with"
+                << playlist.count() << "clips";
+
+    MAIN.undoStack()->beginMacro("Create Short Tracks");
+
+    const int sizeX = 3413; 
+    const int sizeY = 1920;
+    const int viewWidth = 1080;
+    
+    const int nbShortTracks = 2; // TODO(UM): Arbitrary number of short tracks for multiple speakers
+    const int offset = viewWidth / (nbShortTracks + 1);
+    QList<QList<int>> shortTracksPositionsX = QList<QList<int>>();
+
+    for (int shortTrackIndex = 0; shortTrackIndex < nbShortTracks; shortTrackIndex++) {
+        QList<int> clipsPositionsX = QList<int>();
+        shortTracksPositionsX.append(clipsPositionsX); // TODO(UM): Smart detection based on the person position
+        
+        MAIN.undoStack()->push(
+            new Timeline::InsertTrackCommand(m_model, currentTrack(), VideoTrackType));
+            
+        MAIN.undoStack()->push(
+            new Timeline::NameTrackCommand(m_model, currentTrack(), QObject::tr("Short Track %1").arg(shortTrackIndex + 1)));
+
+        for (int clipIndex = 0; clipIndex < playlist.count(); clipIndex++) {
+            clipsPositionsX.append(-sizeX / 2 + viewWidth / 2 - ((shortTrackIndex % 2 == 0) ? -offset : offset)); // TODO(UM): Determine based on the person position
+
+            setSelection(QList<QPoint>() << QPoint(clipIndex, currentTrack() + 1));
+            copy(currentTrack() + 1 + shortTrackIndex, clipIndex);
+
+            const int position = clipIndex == 0 ? 0 : -1;
+            insert(currentTrack(), position);
+
+            auto clipInfo = m_model.getClipInfo(currentTrack(), clipIndex);
+            if (clipInfo && clipInfo->producer) {
+                FilterController* filterController = new FilterController();
+                filterController->setProducer(clipInfo->producer);
+
+                auto meta = MAIN.filterController()->metadata("affineSizePosition");
+                const int row = filterController->attachedModel()->add(meta);
+                
+                auto service = dynamic_cast<Mlt::Filter*>(filterController->attachedModel()->getService(row));
+                service->set("transition.rect", QObject::tr("0=%1 0 3413 1920 1 0 0 0 0 0 0 0").arg(clipsPositionsX[clipIndex]).toStdString().c_str());
+            }
+        }
+    }
+
+    MAIN.undoStack()->endMacro();
 }
 
 void TimelineDock::moveTrack(int fromTrackIndex, int toTrackIndex)
