@@ -90,6 +90,7 @@ public:
                                int firstItemIndex,
                                int lastItemIndex,
                                int64_t msTime);
+    Q_INVOKABLE void splitItems(int trackIndex);
     Q_INVOKABLE bool validateMove(const QModelIndexList &items, int64_t msTime);
 
     // Only to be called by subtitle commands

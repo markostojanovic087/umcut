@@ -19,6 +19,7 @@
 
 #include "Logger.h"
 #include "mainwindow.h"
+#include "util.h"
 
 #include <QFileInfo>
 
@@ -338,6 +339,40 @@ bool MoveSubtitlesCommand::mergeWith(const QUndoCommand *other)
     LOG_DEBUG() << "track" << m_trackIndex;
     m_newSubtitles = that->m_newSubtitles;
     return true;
+}
+
+SplitSubtitlesCommand::SplitSubtitlesCommand(SubtitlesModel &model,
+                                           int trackIndex,
+                                           const QList<Subtitles::SubtitleItem> &items)
+    : QUndoCommand(0)
+    , m_model(model)
+    , m_trackIndex(trackIndex)
+    , m_oldSubtitles(items)
+{
+    if (m_oldSubtitles.size() <= 0) {
+        return;
+    }
+    if (m_oldSubtitles.size() == 1) {
+        setText(QObject::tr("Split subtitle"));
+    } else {
+        setText(QObject::tr("Split %n subtitles", nullptr, m_oldSubtitles.size()));
+    }
+    for (int i = 0; i < m_oldSubtitles.size(); i++) {
+        m_newSubtitles.push_back(m_oldSubtitles[i]);
+        m_newSubtitles[i].text = Util::splitSentence(m_newSubtitles[i].text);
+    }
+}
+
+void SplitSubtitlesCommand::redo()
+{
+    m_model.doRemoveSubtitleItems(m_trackIndex, m_oldSubtitles);
+    m_model.doInsertSubtitleItems(m_trackIndex, m_newSubtitles);
+}
+
+void SplitSubtitlesCommand::undo()
+{
+    m_model.doRemoveSubtitleItems(m_trackIndex, m_newSubtitles);
+    m_model.doInsertSubtitleItems(m_trackIndex, m_oldSubtitles);
 }
 
 } // namespace Subtitles
