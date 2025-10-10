@@ -62,6 +62,8 @@ static const unsigned int kLowMemoryThresholdKB = 256U * 1024U;
 #endif
 static const qint64 kFreeSpaceThesholdGB = 25LL * 1024 * 1024 * 1024;
 
+static const std::size_t kSubtitleSplitMinSize = 15;
+
 QString Util::baseName(const QString &filePath, bool trimQuery)
 {
     QString s = filePath;
@@ -921,6 +923,10 @@ bool Util::hasiPhoneAmbisonic(Mlt::Producer *producer)
 
 std::string Util::splitSentence(const std::string &sentence)
 {
+    if (sentence.size() <= kSubtitleSplitMinSize) {
+        return sentence;
+    }
+
     size_t middlePoint = sentence.length() / 2;
 
     size_t splitPosition = std::string::npos;
