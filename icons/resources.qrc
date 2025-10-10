@@ -141,6 +141,7 @@
         <file>dark/32x32/zoom-original.png</file>
         <file>dark/32x32/zoom-out.png</file>
         <file>dark/32x32/zoom-select.png</file>
+        <file>dark/32x32/um-split.png</file>
         <file>dark/index.theme</file>
         <file>light/16x16/track-locked.png</file>
         <file>light/32x32/4-direction.png</file>
@@ -284,6 +285,7 @@
         <file>light/32x32/zoom-original.png</file>
         <file>light/32x32/zoom-out.png</file>
         <file>light/32x32/zoom-select.png</file>
+        <file>light/32x32/um-split.png</file>
         <file>light/index.theme</file>
         <file>oxygen/32x32/actions/4-direction.png</file>
         <file>oxygen/32x32/actions/chronometer.png</file>
@@ -414,6 +416,7 @@
         <file>oxygen/32x32/actions/zoom-original.png</file>
         <file>oxygen/32x32/actions/zoom-out.png</file>
         <file>oxygen/32x32/actions/zoom-select.png</file>
+        <file>oxygen/32x32/actions/um-split.png</file>
         <file>oxygen/32x32/apps/system-file-manager.png</file>
         <file>oxygen/32x32/devices/audio-input-microphone.png</file>
         <file>oxygen/32x32/devices/cpu.png</file>
@@ -560,6 +563,7 @@
         <file>oxygen-dark/32x32/actions/zoom-original.png</file>
         <file>oxygen-dark/32x32/actions/zoom-out.png</file>
         <file>oxygen-dark/32x32/actions/zoom-select.png</file>
+        <file>oxygen-dark/32x32/actions/um-split.png</file>
         <file>oxygen-dark/32x32/apps/system-file-manager.png</file>
         <file>oxygen-dark/32x32/devices/audio-input-microphone.png</file>
         <file>oxygen-dark/32x32/devices/cpu.png</file>

@@ -458,6 +458,17 @@ void SubtitlesModel::moveItems(int trackIndex, int firstItemIndex, int lastItemI
     MAIN.undoStack()->push(command);
 }
 
+void SubtitlesModel::splitItems(int trackIndex)
+{
+    QList<Subtitles::SubtitleItem> items;
+    for (int i = 0; i < m_items[trackIndex].size(); i++) {
+        items.append(m_items[trackIndex][i]);
+    }
+    Subtitles::SplitSubtitlesCommand *command
+        = new Subtitles::SplitSubtitlesCommand(*this, trackIndex, items);
+    MAIN.undoStack()->push(command);
+}
+
 bool SubtitlesModel::validateMove(const QModelIndexList &items, int64_t msTime)
 {
     if (items.size() <= 0) {

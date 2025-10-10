@@ -191,6 +191,7 @@ SubtitlesDock::SubtitlesDock(QWidget *parent)
     mainMenu->addAction(Actions["subtitleBurnInAction"]);
     mainMenu->addAction(Actions["subtitleGenerateTextAction"]);
     mainMenu->addAction(Actions["subtitleSpeechToTextAction"]);
+    mainMenu->addAction(Actions["subtitleSplit"]);
     mainMenu->addAction(Actions["subtitleTrackTimelineAction"]);
     mainMenu->addAction(Actions["subtitleShowPrevNextAction"]);
 
@@ -257,6 +258,11 @@ SubtitlesDock::SubtitlesDock(QWidget *parent)
 
     button = new QToolButton;
     button->setDefaultAction(Actions["subtitleSpeechToTextAction"]);
+    button->setAutoRaise(true);
+    toolbar->addWidget(button);
+
+    button = new QToolButton;
+    button->setDefaultAction(Actions["subtitleSplit"]);
     button->setAutoRaise(true);
     toolbar->addWidget(button);
 
@@ -424,6 +430,13 @@ void SubtitlesDock::setupActions()
                                      QIcon(":/icons/oxygen/32x32/actions/speech-to-text.png")));
     connect(action, &QAction::triggered, this, &SubtitlesDock::speechToText);
     Actions.add("subtitleSpeechToTextAction", action, windowTitle());
+
+    action = new QAction(tr("Split subtitles"), this);
+    action->setToolTip(tr("Split all subtitles in two lines."));
+    action->setIcon(QIcon::fromTheme("um-split",
+                                     QIcon(":/icons/oxygen/32x32/actions/um-split.png")));
+    connect(action, &QAction::triggered, this, &SubtitlesDock::splitSubtitles);
+    Actions.add("subtitleSplit", action, windowTitle());
 
     action = new QAction(tr("Track Timeline Cursor"), this);
     action->setToolTip(tr("Track the timeline cursor"));
@@ -989,6 +1002,7 @@ void SubtitlesDock::updateActionAvailablity()
         Actions["subtitleBurnInAction"]->setEnabled(false);
         Actions["subtitleGenerateTextAction"]->setEnabled(false);
         Actions["subtitleSpeechToTextAction"]->setEnabled(false);
+        Actions["subtitleSplit"]->setEnabled(false);
     } else {
         m_addToTimelineLabel->setVisible(false);
         Actions["subtitleCreateEditItemAction"]->setEnabled(true);
@@ -997,6 +1011,7 @@ void SubtitlesDock::updateActionAvailablity()
         Actions["SubtitleImportAction"]->setEnabled(true);
         Actions["subtitleAddItemAction"]->setEnabled(true);
         Actions["subtitleSpeechToTextAction"]->setEnabled(true);
+        Actions["subtitleSplit"]->setEnabled(true);
         if (m_model->trackCount() == 0) {
             Actions["subtitleRemoveTrackAction"]->setEnabled(false);
             Actions["SubtitleExportAction"]->setEnabled(false);
@@ -1312,4 +1327,10 @@ void SubtitlesDock::speechToText()
                                                             this));
     tmpSrt->setParent(whisperJob);
     JOBS.add(whisperJob);
+}
+
+void SubtitlesDock::splitSubtitles()
+{
+    int trackIndex = m_trackCombo->currentIndex();
+    m_model->splitItems(trackIndex);
 }

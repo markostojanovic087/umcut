@@ -29,6 +29,7 @@ enum {
     UndoIdSubStart,
     UndoIdSubEnd,
     UndoIdSubMove,
+    UndoIdSubSplit,
 };
 
 class InsertTrackCommand : public QUndoCommand
@@ -175,6 +176,22 @@ public:
 protected:
     int id() const { return UndoIdSubMove; }
     bool mergeWith(const QUndoCommand *other);
+
+private:
+    SubtitlesModel &m_model;
+    int m_trackIndex;
+    QList<Subtitles::SubtitleItem> m_oldSubtitles;
+    QList<Subtitles::SubtitleItem> m_newSubtitles;
+};
+
+class SplitSubtitlesCommand : public QUndoCommand
+{
+public:
+    SplitSubtitlesCommand(SubtitlesModel &model,
+                         int trackIndex,
+                         const QList<Subtitles::SubtitleItem> &items);
+    void redo();
+    void undo();
 
 private:
     SubtitlesModel &m_model;

@@ -62,6 +62,8 @@ static const unsigned int kLowMemoryThresholdKB = 256U * 1024U;
 #endif
 static const qint64 kFreeSpaceThesholdGB = 25LL * 1024 * 1024 * 1024;
 
+static const std::size_t kSubtitleSplitMinSize = 15;
+
 QString Util::baseName(const QString &filePath, bool trimQuery)
 {
     QString s = filePath;
@@ -917,4 +919,35 @@ bool Util::hasiPhoneAmbisonic(Mlt::Producer *producer)
     return producer && producer->is_valid()
            && !::qstrcmp(producer->get("meta.media.1.stream.type"), "audio")
            && QString(producer->get("meta.attr.com.apple.quicktime.model.markup")).contains("iPhone");
+}
+
+std::string Util::splitSentence(const std::string &sentence)
+{
+    if (sentence.size() <= kSubtitleSplitMinSize) {
+        return sentence;
+    }
+
+    size_t middlePoint = sentence.length() / 2;
+
+    size_t splitPosition = std::string::npos;
+    size_t leftSplitPosition = sentence.rfind(' ', middlePoint);
+    size_t rightSplitPosition = sentence.find(' ', middlePoint);
+
+    if (leftSplitPosition == std::string::npos && rightSplitPosition == std::string::npos) {
+        return sentence;
+    }
+
+    if (leftSplitPosition == std::string::npos) {
+        splitPosition = rightSplitPosition;
+    } else if (rightSplitPosition == std::string::npos) {
+        splitPosition = leftSplitPosition;
+    } else if (middlePoint - leftSplitPosition <= rightSplitPosition - middlePoint) {
+        splitPosition = leftSplitPosition;
+    } else {
+        splitPosition = rightSplitPosition;
+    }
+    
+    std::string firstHalf = sentence.substr(0, splitPosition);
+    std::string secondHalf = sentence.substr(splitPosition + 1);
+    return firstHalf + '\n' + secondHalf;
 }

@@ -90,6 +90,7 @@ public:
     static double getSuggestedFrameRate(Mlt::Producer *producer);
     static Mlt::Producer openMltVirtualClip(const QString &path);
     static bool hasiPhoneAmbisonic(Mlt::Producer *producer);
+    static std::string splitSentence(const std::string &sentence);
 };
 
 #endif // UTIL_H
